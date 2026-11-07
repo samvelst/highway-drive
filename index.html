@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Highway Drive</title>
+  <link rel="stylesheet" href="/src/style.css" />
+  <style>
+    #boot { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; background: #11161c; color: #fff; text-align: center; font: 16px -apple-system, system-ui, sans-serif; }
+    #boot h1 { margin: 0; font-size: 30px; }
+    #bootLog { margin: 0; min-height: 90px; font: 13px ui-monospace, Menlo, monospace; text-align: left; white-space: pre-wrap; opacity: .85; }
+    #bootError { margin: 0; max-width: 100%; color: #ff9a8f; font: 13px ui-monospace, Menlo, monospace; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; }
+    #bootHelp a { color: #ffb52e; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="boot">
+    <h1>Highway Drive</h1>
+    <pre id="bootLog">Loading the game...</pre>
+    <pre id="bootError"></pre>
+    <div id="bootHelp"></div>
+  </div>
+  <script>
+    // Plain script, so startup progress and errors still show if the game itself fails.
+    (function () {
+      var log = document.getElementById('bootLog');
+      var lines = [];
+      var started = performance.now();
+      var last = started;
+      var compatLink = location.search.indexOf('webgl') === -1
+        ? ' <a href="?webgl=1">Try compatibility mode</a>'
+        : '';
+      window.bootStep = function (name) {
+        var now = performance.now();
+        if (lines.length) lines[lines.length - 1] += ' (' + ((now - last) / 1000).toFixed(1) + 's)';
+        last = now;
+        lines.push(name);
+        log.textContent = lines.join('\n');
+      };
+      window.bootFail = function (message) {
+        document.getElementById('bootError').textContent = String(message);
+        document.getElementById('bootHelp').innerHTML = 'The game could not start.' + compatLink;
+      };
+      addEventListener('error', function (e) {
+        bootFail(e.message + (e.filename ? '\n' + e.filename.split('/').pop() + ':' + e.lineno : ''));
+      });
+      addEventListener('unhandledrejection', function (e) {
+        bootFail((e.reason && (e.reason.stack || e.reason.message)) || e.reason);
+      });
+      window.bootTimer = setTimeout(function () {
+        document.getElementById('bootHelp').innerHTML = 'This is taking a long time.' + compatLink;
+      }, 20000);
+    })();
+  </script>
+
+  <div id="hud" class="hidden">
+    <div class="hud-score">
+      <span class="label">Score</span>
+      <span id="score" class="value">0</span>
+    </div>
+    <div class="hud-lives" id="lives" aria-label="Lives"></div>
+    <div class="hud-speed">
+      <span id="speed" class="value">0</span>
+      <span class="label">mph</span>
+    </div>
+  </div>
+
+  <div id="touch" class="hidden">
+    <div id="stickZone">
+      <div id="stickBase"><div id="stickKnob"></div></div>
+    </div>
+    <div class="pedals">
+      <button id="gasPedal" class="pedal gas" aria-label="Speed up">GO</button>
+      <button id="brakePedal" class="pedal brake" aria-label="Slow down">BRAKE</button>
+    </div>
+    <div class="touch-buttons">
+      <button id="touchPause" aria-label="Pause">&#10074;&#10074;</button>
+      <button id="touchMute" aria-label="Mute">&#9835;</button>
+    </div>
+  </div>
+
+  <div id="popups"></div>
+  <div id="fade"></div>
+
+  <section id="menu" class="panel-wrap hidden">
+    <div class="menu-top">
+      <h1>Highway Drive</h1>
+      <p class="tagline">Keep moving. Spare the pets. Hunt the wolves.</p>
+    </div>
+    <div class="menu-bottom">
+      <div class="picker">
+        <button id="prevCar" class="arrow" aria-label="Previous car">&#8249;</button>
+        <div class="car-card">
+          <h2 id="carName"></h2>
+          <p id="carBlurb"></p>
+        </div>
+        <button id="nextCar" class="arrow" aria-label="Next car">&#8250;</button>
+      </div>
+      <button id="startBtn" class="primary">Start driving</button>
+      <div class="help">
+        <div><b>Keyboard</b> W/S speed up and slow down, A/D steer, P pause, M mute</div>
+        <div><b>Switch controller</b> left stick drives, A selects, + pauses</div>
+        <div class="touch-only"><b>Touchscreen</b> thumb stick on the left steers, hold GO or BRAKE on the right</div>
+      </div>
+      <div class="rules">
+        <span>Time driving <b>+10/s</b></span>
+        <span>Dog or cat <b class="bad">&minus;100</b></span>
+        <span>Wolf <b class="good">+150</b></span>
+        <span>Penguin <b class="good">+200</b></span>
+        <span>Crash, wrong-way car or orca <b class="bad">lose a life</b></span>
+      </div>
+      <div id="padStatus" class="status"></div>
+    </div>
+  </section>
+
+  <section id="pause" class="panel-wrap center hidden">
+    <div class="panel">
+      <h2>Paused</h2>
+      <button id="resumeBtn" class="primary">Resume</button>
+      <button id="quitBtn" class="secondary">Back to garage</button>
+    </div>
+  </section>
+
+  <section id="gameover" class="panel-wrap center hidden">
+    <div class="panel">
+      <h2>Out of lives</h2>
+      <div class="final" id="finalScore">0</div>
+      <p id="finalDetail"></p>
+      <button id="againBtn" class="primary">Drive again</button>
+      <button id="garageBtn" class="secondary">Change car</button>
+    </div>
+  </section>
+
+  <div id="notice" class="hidden"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
