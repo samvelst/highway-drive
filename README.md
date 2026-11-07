@@ -3,6 +3,11 @@
 A 3D highway driving game built with Three.js and WebGPU. Browsers without
 WebGPU fall back to WebGL 2 automatically.
 
+**Play it online:** https://samvelst.github.io/highway-drive/
+
+Every push to `main` rebuilds the game and publishes it to GitHub Pages
+through `.github/workflows/deploy.yml`.
+
 ## Run it
 
 ```bash
